@@ -3,135 +3,161 @@ import pandas as pd
 import sqlite3
 from datetime import datetime, timedelta
 
-# Initialize SQLite database
-# Initialize SQLite database
-conn = sqlite3.connect("case1_records.db")
-cursor = conn.cursor()
+# Function to check credentials
+def check_login(username, password):
+    # Simple check (for demo purposes)
+    return username == "AmolS" and password == "SanapA"
 
-# Create cases table if not exists
-cursor.execute('''CREATE TABLE IF NOT EXISTS cases (
-    sr_no INTEGER PRIMARY KEY,
-    next_date TEXT,
-    court TEXT,
-    case_no TEXT UNIQUE,
-    client_name TEXT,
-    name TEXT,
-    file_no TEXT,
-    stage TEXT,
-    fee REAL DEFAULT 0,
-    advance REAL DEFAULT 0
-)''')
-
-
-# Create payments table if not exists
-cursor.execute('''CREATE TABLE IF NOT EXISTS payments (
-    payment_id INTEGER PRIMARY KEY,
-    case_no TEXT,
-    payment_amount REAL,
-    payment_date TEXT,
-    FOREIGN KEY (case_no) REFERENCES cases(case_no)
-)''')
-
-conn.commit()
-
-# Function to load data from the database
-def load_data():
-    query = "SELECT * FROM cases"
-    return pd.read_sql_query(query, conn)
-
-# Function to insert or update data in the database
-def upsert_case(case, payments=None):
-    case = (
-        int(case[0]),  # sr_no must be an integer
-        str(case[1]),  # next_date must be a string (YYYY-MM-DD)
-        str(case[2]),  # court must be a string
-        str(case[3]),  # case_no must be a string
-        str(case[4]),  # client_name must be a string
-        str(case[5]),  # name must be a string
-        str(case[6]),  # file_no must be a string
-        str(case[7]),  # stage must be a string
-        float(case[8]),  # fee must be a float
-        float(case[9]),  # advance must be a float
-    )
-    cursor.execute('''
-    INSERT INTO cases (sr_no, next_date, court, case_no, client_name, name, file_no, stage, fee, advance)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(case_no) DO UPDATE SET
-        next_date=excluded.next_date,
-        court=excluded.court,
-        client_name=excluded.client_name,
-        name=excluded.name,
-        file_no=excluded.file_no,
-        stage=excluded.stage,
-        fee=excluded.fee,
-        advance=excluded.advance
-    ''', case)
-
-    if payments:
-        for payment in payments:
-            payment = (
-                str(payment[0]),  # case_no
-                float(payment[1]),  # payment_amount
-                str(payment[2]),  # payment_date in YYYY-MM-DD format
-            )
-            cursor.execute('''
-            INSERT INTO payments (case_no, payment_amount, payment_date)
-            VALUES (?, ?, ?)
-            ''', payment)
+# Login page in the sidebar
+def login_page():
+    st.sidebar.title("Login")
     
-    conn.commit()
-
-
-# Function to update advance payment
-def update_advance(case_no, new_advance):
-    cursor.execute('''
-    UPDATE cases
-    SET advance = ?
-    WHERE case_no = ?
-    ''', (new_advance, case_no))
-    conn.commit()
-
-# Load data
-data = load_data()
-
-# Tabs in the main page
-tabs = st.tabs(["1. Create New Case", "2. Update Case", "3. Show Database", "4. Alerts", "5. Calculator", "6. Client Fee Management", "7. Graphs of Database"])
-
-# Tab 1: Create New Case
-with tabs[0]:
-    st.title("Create New Case")
-    new_case = {
-        "sr_no": len(data) + 1,
-        "next_date": st.date_input("Next Date for New Case", value=datetime.today()).strftime("%Y-%m-%d"),
-        "court": st.text_input("Court"),
-        "case_no": st.text_input("Case No."),
-        "client_name": st.text_input("Client Name"),
-        "name": st.text_input("Role (Plaintiff/Defendant)"),
-        "file_no": st.text_input("File No."),
-        "stage": st.text_input("Stage for New Case"),
-        "fee": st.number_input("Total Fee", min_value=0.0, step=0.01),
-        "advance": st.number_input("Advance Paid", min_value=0.0, step=0.01),
-    }
-
-    if st.button("Add Case"):
-        if all(new_case.values()):
-            new_case_tuple = (
-                new_case["sr_no"],
-                new_case["next_date"],
-                new_case["court"],
-                new_case["case_no"],
-                new_case["client_name"],
-                new_case["name"],
-                new_case["file_no"],
-                new_case["stage"],
-                new_case["fee"],
-                new_case["advance"]
-            )
-            upsert_case(new_case_tuple)
-            st.success("New case added successfully!")
-            data = load_data()  # Reload data
+    # User input for login credentials in sidebar
+    username = st.sidebar.text_input("Username", key="username")
+    password = st.sidebar.text_input("Password", type="password", key="password")
+    
+    if st.sidebar.button("Login"):
+        if check_login(username, password):
+            st.sidebar.success("Login successful!")
+            return True  # Return True to indicate successful login
         else:
-            st.error("Please fill in all fields before adding a case.")
+            st.sidebar.error("Invalid username or password")
+            return False  # Return False for invalid login
+    return False  # Default False if login button is not pressed
+# If the user has logged in successfully, show the main app
+if login_page():
+    # Your existing Streamlit app code starts here
+    conn = sqlite3.connect("case1_records.db")
+    cursor = conn.cursor()
+
+    # Create cases table if not exists
+    cursor.execute('''CREATE TABLE IF NOT EXISTS cases (
+        sr_no INTEGER PRIMARY KEY,
+        next_date TEXT,
+        court TEXT,
+        case_no TEXT UNIQUE,
+        client_name TEXT,
+        name TEXT,
+        file_no TEXT,
+        stage TEXT,
+        fee REAL DEFAULT 0,
+        advance REAL DEFAULT 0
+    )''')
+
+    # Create payments table if not exists
+    cursor.execute('''CREATE TABLE IF NOT EXISTS payments (
+        payment_id INTEGER PRIMARY KEY,
+        case_no TEXT,
+        payment_amount REAL,
+        payment_date TEXT,
+        FOREIGN KEY (case_no) REFERENCES cases(case_no)
+    )''')
+
+    conn.commit()
+
+    # Function to load data from the database
+    def load_data():
+        query = "SELECT * FROM cases"
+        return pd.read_sql_query(query, conn)
+        # Function to load data from the database
+    # def load_data():
+    #     query = "SELECT * FROM cases"
+    #     return pd.read_sql_query(query, conn)
+    
+    
+        # Function to update advance payment
+    def update_advance(case_no, new_advance):
+        cursor.execute('''
+        UPDATE cases
+        SET advance = ?
+        WHERE case_no = ?
+        ''', (new_advance, case_no))
+        conn.commit()
+
+    # Function to insert or update data in the database
+    def upsert_case(case, payments=None):
+        case = (
+            int(case[0]),  # sr_no must be an integer
+            str(case[1]),  # next_date must be a string (YYYY-MM-DD)
+            str(case[2]),  # court must be a string
+            str(case[3]),  # case_no must be a string
+            str(case[4]),  # client_name must be a string
+            str(case[5]),  # name must be a string
+            str(case[6]),  # file_no must be a string
+            str(case[7]),  # stage must be a string
+            float(case[8]),  # fee must be a float
+            float(case[9]),  # advance must be a float
+        )
+        cursor.execute('''INSERT INTO cases (sr_no, next_date, court, case_no, client_name, name, file_no, stage, fee, advance)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
+        ON CONFLICT(case_no) DO UPDATE SET 
+            next_date=excluded.next_date,
+            court=excluded.court,
+            client_name=excluded.client_name,
+            name=excluded.name,
+            file_no=excluded.file_no,
+            stage=excluded.stage,
+            fee=excluded.fee,
+            advance=excluded.advance
+        ''', case)
+
+        if payments:
+            for payment in payments:
+                payment = (
+                    str(payment[0]),  # case_no
+                    float(payment[1]),  # payment_amount
+                    str(payment[2]),  # payment_date in YYYY-MM-DD format
+                )
+                cursor.execute('''INSERT INTO payments (case_no, payment_amount, payment_date)
+                VALUES (?, ?, ?)''', payment)
+        
+        conn.commit()
+
+    # Load data
+    data = load_data()
+
+    # Tabs in the main page
+    tabs = st.tabs(["1. Create New Case", "2. Update Case", "3. Show Database", "4. Alerts", "5. Calculator", "6. Client Fee Management", "7. Graphs of Database"])
+
+    # Tab 1: Create New Case
+    with tabs[0]:
+        st.title("Create New Case")
+        new_case = {
+            "sr_no": len(data) + 1,
+            "next_date": st.date_input("Next Date for New Case", value=datetime.today()).strftime("%Y-%m-%d"),
+            "court": st.text_input("Court"),
+            "case_no": st.text_input("Case No."),
+            "client_name": st.text_input("Client Name"),
+            "name": st.text_input("Role (Plaintiff/Defendant)"),
+            "file_no": st.text_input("File No."),
+            "stage": st.text_input("Stage for New Case"),
+            "fee": st.number_input("Total Fee", min_value=0.0, step=0.01),
+            "advance": st.number_input("Advance Paid", min_value=0.0, step=0.01),
+        }
+
+        if st.button("Add Case"):
+            if all(new_case.values()):
+                new_case_tuple = (
+                    new_case["sr_no"],
+                    new_case["next_date"],
+                    new_case["court"],
+                    new_case["case_no"],
+                    new_case["client_name"],
+                    new_case["name"],
+                    new_case["file_no"],
+                    new_case["stage"],
+                    new_case["fee"],
+                    new_case["advance"]
+                )
+                upsert_case(new_case_tuple)
+                st.success("New case added successfully!")
+                data = load_data()  # Reload data
+            else:
+                st.error("Please fill in all fields before adding a case.")
+    
+    # Other tabs (Update, Show Database, Alerts, etc.) will go here
+    # ... (Your existing Streamlit app code continues)
+
 
 # Tab 2: Update Case
 # Tab 2: Update Case
@@ -269,7 +295,7 @@ with tabs[6]:
         ax.pie(fee_summary, labels=fee_summary.index, autopct='%1.1f%%', startangle=90)
         ax.axis('equal')
         st.pyplot(fig)
+        
 
     else:
         st.warning("No data available for graphs.")
-
