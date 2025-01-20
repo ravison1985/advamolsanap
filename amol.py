@@ -248,15 +248,28 @@ with tabs[5]:
     else:
         st.warning("No data available.")
 
-# Tab 7: Graphs of Database
+import matplotlib.pyplot as plt
+
 with tabs[6]:
     st.title("Graphs of Database")
+    
     if not data.empty:
+        # Case Count by Court
         st.subheader("Case Count by Court")
         court_counts = data["court"].value_counts()
-        st.bar_chart(court_counts)
+        fig, ax = plt.subplots()
+        ax.pie(court_counts, labels=court_counts.index, autopct='%1.1f%%', startangle=90)
+        ax.axis('equal')  # Equal aspect ratio ensures that pie chart is drawn as a circle.
+        st.pyplot(fig)
 
+        # Fee Summary
         st.subheader("Fee Summary")
-        st.bar_chart(data[["fee", "advance"]].sum())
+        fee_summary = data[["fee", "advance"]].sum()
+        fig, ax = plt.subplots()
+        ax.pie(fee_summary, labels=fee_summary.index, autopct='%1.1f%%', startangle=90)
+        ax.axis('equal')
+        st.pyplot(fig)
+
     else:
         st.warning("No data available for graphs.")
+
