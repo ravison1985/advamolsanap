@@ -203,7 +203,7 @@ if not st.session_state.logged_in:
         if st.button("Login", key="login_btn"):
             if u == USER and p == PASS:
                 st.session_state.logged_in = True
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("Invalid username or password")
         st.markdown('</div>', unsafe_allow_html=True)
@@ -261,7 +261,7 @@ with st.container():
         if c_name and c_case:
             add_client(c_name, c_case, c_contact, c_fee, c_status, c_commit, c_first)
             st.success(f"Client '{c_name}' added.")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Please fill Name and Case Details.")
     st.markdown('</div>', unsafe_allow_html=True)
@@ -293,12 +293,12 @@ if not clients.empty:
             if st.button("💾 Save Changes", key="save_client"):
                 update_client(int(row['id']), e_name, e_case, e_contact, e_fee, e_status, e_commit, e_first)
                 st.success("Updated successfully.")
-                st.experimental_rerun()
+                st.rerun()
         with colb2:
             if st.button("🗑 Delete Client", key="del_client"):
                 delete_client(int(row['id']))
                 st.success("Client deleted.")
-                st.experimental_rerun()
+                st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
 # ---- Hearings: Add + History ----
@@ -316,7 +316,7 @@ if not clients.empty:
         if st.button("➕ Add Hearing", key="add_hear_btn"):
             add_hearing(h_cid, h_date, h_note)
             st.success("Hearing added.")
-            st.experimental_rerun()
+            st.rerun()
 
         # Hearing history
         hdf = df_hearings()
@@ -349,7 +349,7 @@ if not clients.empty:
             if p_amount > 0:
                 add_payment(p_cid, p_date, p_amount, p_mode, p_note)
                 st.success("Payment added.")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("Amount must be greater than 0.")
 
@@ -505,4 +505,5 @@ st.markdown('</div>', unsafe_allow_html=True)
 # ---- Logout ----
 if st.button("🚪 Logout", key="logout"):
     st.session_state.logged_in = False
-    st.experimental_rerun()
+    st.rerun()
+
