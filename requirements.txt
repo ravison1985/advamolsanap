@@ -1,4 +1,6 @@
-streamlit
-pandas
-datetime
-matplotlib
+streamlit==1.36.0
+pandas==2.2.2
+reportlab==4.2.0
+fpdf==1.7.2
+sqlite-utils==3.31
+python-dateutil==2.9.0
