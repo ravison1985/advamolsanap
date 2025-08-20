@@ -12,6 +12,14 @@ from reportlab.lib.styles import getSampleStyleSheet
 
 # ---------------- Page & Style ----------------
 st.set_page_config(page_title="Advocate Client Desk", layout="centered")
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 APP_CSS = """
 
@@ -506,4 +514,5 @@ st.markdown('</div>', unsafe_allow_html=True)
 if st.button("🚪 Logout", key="logout"):
     st.session_state.logged_in = False
     st.rerun()
+
 
